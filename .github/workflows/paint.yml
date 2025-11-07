@@ -1,48 +1,39 @@
-name: Build and deploy to GitHub Pages
+name: Build and Test
 
 on:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20.19.0'
+          cache: 'npm'
 
-      - name: Install dependencies
+      - name: Show versions
         run: |
           node -v
           npm -v
-          nvm install 20
-          nvm use 20
+
+      - name: Install dependencies
+        run: |
           rm -rf node_modules package-lock.json
-          npm install
+          npm ci
           npm install react-router-dom lucide-react
-          npm install --save-dev patch-package postinstall-postinstall
-          npm ls react-router-dom
-          npm run build
+          npm install -D patch-package postinstall-postinstall
 
-
-      - name: Archive site
-        run: zip -r site-dist.zip dist
-
-      - name: Upload artifact for deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
+      - name: Build project
+        run: npm run build
 
   deploy:
     runs-on: ubuntu-latest
