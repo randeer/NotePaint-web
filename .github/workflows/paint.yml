@@ -20,19 +20,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20  # Changed from 18 to 20
 
       - name: Install dependencies
         run: |
           npm -v
           npm install
-          npm install react-router-dom
-          npm install lucide-react
-          npm ls react-router-dom
           npm run build
-
-      - name: Archive site
-        run: zip -r site-dist.zip dist
 
       - name: Upload artifact for deployment
         uses: actions/upload-pages-artifact@v3
