@@ -1,0 +1,5 @@
+{
+  "name": "Collaborative Whiteboard",
+  "description": "A real-time collaborative whiteboard application that allows users to draw, write text, and add images. Share your creations with a unique URL, enabling others to view and edit the board.",
+  "requestFramePermissions": []
+}

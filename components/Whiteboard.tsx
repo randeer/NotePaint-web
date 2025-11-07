@@ -1,0 +1,489 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Stage, Layer, Line, Text, Image as KonvaImage, Rect, Circle, Transformer } from 'react-konva';
+import Konva from 'konva';
+import { Item, Tool, TextItem, ImageItem, RectangleItem, CircleItem, SimpleLineItem } from '../types';
+
+interface WhiteboardProps {
+  items: Item[];
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  tool: Tool;
+  color: string;
+  brushSize: number;
+}
+
+const useImage = (src: string): [HTMLImageElement | undefined] => {
+  const [image, setImage] = useState<HTMLImageElement>();
+  useEffect(() => {
+    const img = new window.Image();
+    img.src = src;
+    img.onload = () => {
+      setImage(img);
+    };
+  }, [src]);
+  return [image];
+};
+
+const ImageCanvasItem: React.FC<{
+  item: ImageItem;
+  onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => void;
+  onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  draggable: boolean;
+}> = ({ item, onDragEnd, onMouseDown, draggable }) => {
+  const [image] = useImage(item.src);
+  return (
+    <KonvaImage
+      id={item.id}
+      x={item.x}
+      y={item.y}
+      image={image}
+      width={item.width}
+      height={item.height}
+      draggable={draggable}
+      onDragEnd={onDragEnd}
+      onMouseDown={onMouseDown}
+    />
+  );
+};
+
+interface CanvasItemProps {
+  item: Item;
+  onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => void;
+  onDoubleClick: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  tool: Tool;
+}
+
+const CanvasItem: React.FC<CanvasItemProps> = ({
+  item,
+  onDragEnd,
+  onDoubleClick,
+  onMouseDown,
+  tool
+}) => {
+  const isDraggable = tool === Tool.SELECT;
+
+  if (item.type === 'line') {
+    return (
+      <Line
+        id={item.id}
+        points={item.points}
+        stroke={item.isEraser ? '#4A5568' : item.color} // Eraser color matches background
+        strokeWidth={item.brushSize}
+        tension={0.5}
+        lineCap="round"
+        lineJoin="round"
+        globalCompositeOperation={item.isEraser ? 'destination-out' : 'source-over'}
+        draggable={isDraggable}
+        onDragEnd={onDragEnd}
+        onMouseDown={onMouseDown}
+        x={item.x}
+        y={item.y}
+      />
+    );
+  }
+  if (item.type === 'text') {
+    return (
+      <Text
+        id={item.id}
+        x={item.x}
+        y={item.y}
+        text={item.text}
+        fontSize={item.fontSize}
+        fill={item.color}
+        draggable={isDraggable}
+        onDragEnd={onDragEnd}
+        onDblClick={onDoubleClick}
+        onDblTap={onDoubleClick}
+        onMouseDown={onMouseDown}
+        width={item.width}
+      />
+    );
+  }
+  if (item.type === 'image') {
+    return <ImageCanvasItem item={item} onDragEnd={onDragEnd} onMouseDown={onMouseDown} draggable={isDraggable} />;
+  }
+  if (item.type === 'rectangle') {
+    return (
+        <Rect 
+            id={item.id}
+            x={item.x}
+            y={item.y}
+            width={item.width}
+            height={item.height}
+            stroke={item.color}
+            strokeWidth={item.strokeWidth}
+            draggable={isDraggable}
+            onDragEnd={onDragEnd}
+            onMouseDown={onMouseDown}
+        />
+    )
+  }
+  if (item.type === 'circle') {
+    return (
+        <Circle
+            id={item.id}
+            x={item.x}
+            y={item.y}
+            radius={item.radius}
+            stroke={item.color}
+            strokeWidth={item.strokeWidth}
+            draggable={isDraggable}
+            onDragEnd={onDragEnd}
+            onMouseDown={onMouseDown}
+        />
+    )
+  }
+    if (item.type === 'simple-line') {
+    return (
+        <Line
+            id={item.id}
+            points={item.points}
+            stroke={item.color}
+            strokeWidth={item.strokeWidth}
+            draggable={isDraggable}
+            onDragEnd={onDragEnd}
+            onMouseDown={onMouseDown}
+            x={item.x}
+            y={item.y}
+        />
+    )
+  }
+  return null;
+};
+
+export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, color, brushSize }) => {
+  const isDrawing = useRef(false);
+  const startPoint = useRef({ x: 0, y: 0 });
+  const [drawingShape, setDrawingShape] = useState<Item | null>(null);
+
+  const [editingText, setEditingText] = useState<TextItem | null>(null);
+  const stageRef = useRef<Konva.Stage>(null);
+  const trRef = useRef<Konva.Transformer>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const checkSize = () => {
+      if (containerRef.current) {
+        setStageSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
+  useEffect(() => {
+    if (!trRef.current || !stageRef.current) return;
+    
+    const stage = stageRef.current;
+    const selectedNode = selectedId ? stage.findOne('#' + selectedId) : null;
+    const selectedItem = items.find(item => item.id === selectedId);
+
+    if (selectedNode && selectedItem) {
+      trRef.current.nodes([selectedNode]);
+      if (selectedItem.type === 'image' || selectedItem.type === 'circle') {
+        trRef.current.keepRatio(true);
+        trRef.current.enabledAnchors(['top-left', 'top-right', 'bottom-left', 'bottom-right']);
+      } else {
+        trRef.current.keepRatio(false);
+        trRef.current.enabledAnchors(undefined);
+      }
+    } else {
+      trRef.current.nodes([]);
+    }
+    trRef.current.getLayer()?.batchDraw();
+  }, [selectedId, items]);
+
+
+  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Deselect if clicked on empty area
+    if (e.target === e.target.getStage()) {
+      setSelectedId(null);
+    }
+    
+    if (tool === Tool.SELECT || editingText) return;
+    
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+
+    isDrawing.current = true;
+    startPoint.current = pos;
+    
+    if (tool === Tool.PENCIL || tool === Tool.ERASER) {
+        const newItem: Item = {
+            id: Date.now().toString(),
+            type: 'line',
+            points: [pos.x, pos.y],
+            color,
+            brushSize,
+            isEraser: tool === Tool.ERASER,
+            x: 0,
+            y: 0,
+        };
+        setItems((prevItems) => [...prevItems, newItem]);
+    } else {
+        const shapeId = `drawing-${Date.now()}`;
+        let shape: Item | null = null;
+        if (tool === Tool.RECTANGLE) {
+            shape = { id: shapeId, type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, color, strokeWidth: brushSize } as RectangleItem;
+        } else if (tool === Tool.CIRCLE) {
+            shape = { id: shapeId, type: 'circle', x: pos.x, y: pos.y, radius: 0, color, strokeWidth: brushSize } as CircleItem;
+        } else if (tool === Tool.LINE) {
+            shape = { id: shapeId, type: 'simple-line', points: [pos.x, pos.y, pos.x, pos.y], color, strokeWidth: brushSize, x:0, y:0 } as SimpleLineItem;
+        }
+        setDrawingShape(shape);
+    }
+  };
+
+  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (!isDrawing.current) return;
+    
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const point = stage.getPointerPosition();
+    if (!point) return;
+
+    if (tool === Tool.PENCIL || tool === Tool.ERASER) {
+        setItems((prevItems) => {
+          const lastItem = prevItems[prevItems.length - 1];
+          if (lastItem && lastItem.type === 'line') {
+            return [
+              ...prevItems.slice(0, -1),
+              { ...lastItem, points: lastItem.points.concat([point.x, point.y]) },
+            ];
+          }
+          return prevItems;
+        });
+    } else if (drawingShape) {
+        let updatedShape = { ...drawingShape };
+        if (updatedShape.type === 'rectangle') {
+            updatedShape.width = point.x - startPoint.current.x;
+            updatedShape.height = point.y - startPoint.current.y;
+        } else if (updatedShape.type === 'circle') {
+            const dx = point.x - startPoint.current.x;
+            const dy = point.y - startPoint.current.y;
+            updatedShape.radius = Math.sqrt(dx * dx + dy * dy);
+            updatedShape.x = startPoint.current.x; // Keep center fixed
+            updatedShape.y = startPoint.current.y;
+        } else if (updatedShape.type === 'simple-line') {
+            updatedShape.points = [startPoint.current.x, startPoint.current.y, point.x, point.y];
+        }
+        setDrawingShape(updatedShape);
+    }
+  };
+
+  const handleMouseUp = () => {
+    isDrawing.current = false;
+    if (drawingShape) {
+      if (
+        (drawingShape.type === 'rectangle' && (drawingShape.width !== 0 || drawingShape.height !== 0)) ||
+        (drawingShape.type === 'circle' && drawingShape.radius > 2) ||
+        (drawingShape.type === 'simple-line' && (drawingShape.points[0] !== drawingShape.points[2] || drawingShape.points[1] !== drawingShape.points[3]))
+      ) {
+         // Normalize rectangle width/height
+         if (drawingShape.type === 'rectangle') {
+            if (drawingShape.width < 0) {
+              drawingShape.x = drawingShape.x + drawingShape.width;
+              drawingShape.width = -drawingShape.width;
+            }
+            if (drawingShape.height < 0) {
+              drawingShape.y = drawingShape.y + drawingShape.height;
+              drawingShape.height = -drawingShape.height;
+            }
+          }
+         setItems(prev => [...prev, { ...drawingShape, id: Date.now().toString() }]);
+      }
+      setDrawingShape(null);
+    }
+  };
+
+  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (tool !== Tool.TEXT || editingText) return;
+    if (e.target !== e.target.getStage()) return;
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+
+    const newItem: TextItem = {
+      id: Date.now().toString(),
+      type: 'text',
+      x: pos.x,
+      y: pos.y,
+      text: 'Double click to edit',
+      color,
+      fontSize: 24,
+      width: 200,
+    };
+    setItems((prevItems) => [...prevItems, newItem]);
+  };
+  
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const id = e.target.id();
+    const target = e.target;
+    setItems(
+      items.map((item) => {
+        if (item.id === id) {
+          return { ...item, x: target.x(), y: target.y() };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleTextDblClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (tool !== Tool.SELECT) return;
+    const id = e.target.id();
+    const textNode = e.target as Konva.Text;
+    const item = items.find(i => i.id === id && i.type === 'text') as TextItem;
+    if (item) {
+      setSelectedId(null); // Hide transformer during text edit
+      setEditingText({ ...item, x: textNode.absolutePosition().x, y: textNode.absolutePosition().y });
+    }
+  };
+
+  const handleTextEdit = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (editingText) {
+      setEditingText({ ...editingText, text: e.target.value });
+    }
+  };
+
+  const handleTextareaBlur = () => {
+    if (editingText) {
+      const newItems = items.map(item => {
+        if (item.id === editingText.id) {
+          return { ...editingText, x: item.x, y: item.y }; // Revert to relative position
+        }
+        return item;
+      });
+      setItems(newItems);
+      setEditingText(null);
+    }
+  };
+  
+  const handleItemMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (tool === Tool.SELECT) {
+          setSelectedId(e.target.id());
+      }
+  }
+
+  const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target;
+    const id = node.id();
+
+    setItems(prevItems => prevItems.map(item => {
+        if (item.id === id) {
+            const scaleX = node.scaleX();
+            const scaleY = node.scaleY();
+            node.scaleX(1);
+            node.scaleY(1);
+            
+            const baseUpdate = {
+                ...item,
+                x: node.x(),
+                y: node.y(),
+            };
+
+            switch(item.type) {
+                case 'image':
+                case 'rectangle':
+                    return {
+                        ...baseUpdate,
+                        width: Math.max(20, item.width * scaleX),
+                        height: Math.max(20, item.height * scaleY),
+                    };
+                case 'circle':
+                    const avgScale = (scaleX + scaleY) / 2;
+                    return {
+                        ...baseUpdate,
+                        radius: Math.max(10, item.radius * avgScale),
+                    };
+                case 'text':
+                    return {
+                        ...baseUpdate,
+                        width: Math.max(20, item.width * scaleX),
+                        fontSize: Math.max(8, item.fontSize * scaleY),
+                    };
+                default:
+                    return baseUpdate;
+            }
+        }
+        return item;
+    }));
+  };
+
+
+  return (
+    <div ref={containerRef} className="w-full h-full bg-gray-500 relative" style={{ cursor: tool === Tool.SELECT ? 'default' : 'crosshair' }}>
+      <Stage
+        width={stageSize.width}
+        height={stageSize.height}
+        onMouseDown={handleMouseDown}
+        onMousemove={handleMouseMove}
+        onMouseup={handleMouseUp}
+        onClick={handleStageClick}
+        ref={stageRef}
+        className="bg-white"
+      >
+        <Layer>
+          {items.map((item) => {
+            if (editingText && item.id === editingText.id) return null;
+            return <CanvasItem 
+              key={item.id} 
+              item={item} 
+              onDragEnd={handleDragEnd} 
+              onDoubleClick={handleTextDblClick}
+              onMouseDown={handleItemMouseDown}
+              tool={tool}
+            />;
+          })}
+          {drawingShape && <CanvasItem item={drawingShape} onDragEnd={()=>{}} onDoubleClick={()=>{}} onMouseDown={()=>{}} tool={tool}/>}
+          <Transformer
+            ref={trRef}
+            boundBoxFunc={(oldBox, newBox) => {
+              if (newBox.width < 10 || newBox.height < 10) {
+                return oldBox;
+              }
+              return newBox;
+            }}
+            onTransformEnd={handleTransformEnd}
+            rotateEnabled={false}
+          />
+        </Layer>
+      </Stage>
+      {editingText && (
+        <textarea
+          value={editingText.text}
+          onChange={handleTextEdit}
+          onBlur={handleTextareaBlur}
+          autoFocus
+          style={{
+            position: 'absolute',
+            top: editingText.y,
+            left: editingText.x,
+            width: editingText.width,
+            height: 'auto',
+            background: '#ffffff',
+            color: 'black',
+            border: '1px solid #4f46e5',
+            fontSize: `${editingText.fontSize}px`,
+            fontFamily: 'sans-serif',
+            padding: '4px',
+            margin: 0,
+            resize: 'none',
+            overflow: 'hidden',
+            lineHeight: '1.2',
+            zIndex: 100,
+          }}
+        />
+      )}
+    </div>
+  );
+};
