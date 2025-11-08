@@ -9,123 +9,27 @@ import { Tool, Item } from './types';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
 
-// --- Firebase Configuration Modal Component ---
-const configFields = [
-  'apiKey', 'authDomain', 'databaseURL', 'projectId', 
-  'storageBucket', 'messagingSenderId', 'appId'
-];
-
-const FirebaseConfigModal: React.FC = () => {
-  const [config, setConfig] = useState(
-    Object.fromEntries(configFields.map(field => [field, '']))
-  );
-  const [error, setError] = useState('');
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setConfig({
-      ...config,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSave = () => {
-    // Basic validation
-    if (!config.apiKey || !config.databaseURL || !config.projectId) {
-      setError('Please fill in at least apiKey, databaseURL, and projectId.');
-      return;
-    }
-    try {
-      // Validate databaseURL format
-      const url = new URL(config.databaseURL);
-      if (url.protocol !== 'https:') {
-          setError('databaseURL must start with https://');
-          return;
-      }
-    } catch(e) {
-      setError('The provided databaseURL is not a valid URL.');
-      return;
-    }
-
-    setError('');
-    localStorage.setItem('firebaseConfig', JSON.stringify(config));
-    window.location.reload();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl mx-4 text-white">
-        <h2 className="text-3xl font-bold mb-4">Firebase Configuration Required</h2>
-        <p className="text-gray-300 mb-6">
-          To enable real-time collaboration, this application needs to connect to a Firebase Realtime Database.
-          Please create a <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">free Firebase project</a>,
-          set up a Realtime Database (in test mode for easy setup), and paste your project's web configuration below.
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {configFields.map(field => (
-            <div key={field}>
-              <label htmlFor={field} className="block text-sm font-medium text-gray-400 mb-1">{field}</label>
-              <input
-                type="text"
-                id={field}
-                name={field}
-                value={config[field] || ''}
-                onChange={handleChange}
-                placeholder={`Your project's ${field}`}
-                className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          ))}
-        </div>
-
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 rounded-md font-semibold transition-colors bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Save and Reload
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+// --- Hardcoded Firebase Configuration ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCo-dliYA6nyWNRD6w8k1fV8qAiAbebdJ4",
+  authDomain: "testlala-8e34d.firebaseapp.com",
+  databaseURL: "https://testlala-8e34d-default-rtdb.firebaseio.com",
+  projectId: "testlala-8e34d",
+  storageBucket: "testlala-8e34d.appspot.com",
+  messagingSenderId: "1003271711310",
+  appId: "1:1003271711310:web:4c5e188cd9ef166a2c711f",
+  measurementId: "G-R6Z9Q70TQP"
 };
 
-
-// --- Helper function to get config from storage ---
-const getFirebaseConfigFromStorage = () => {
-    const configStr = localStorage.getItem('firebaseConfig');
-    if (!configStr) return null;
-    try {
-        const config = JSON.parse(configStr);
-        // Basic validation
-        if (config.apiKey && config.databaseURL && config.projectId) {
-            return config;
-        }
-        localStorage.removeItem('firebaseConfig'); // Clear invalid stored config
-        return null;
-    } catch (e) {
-        console.error("Failed to parse firebase config from localStorage", e);
-        localStorage.removeItem('firebaseConfig');
-        return null;
-    }
-}
-
 const App: React.FC = () => {
-  const firebaseConfig = getFirebaseConfigFromStorage();
-  
   const firebaseInstances = useMemo(() => {
-    if (!firebaseConfig) return null;
     try {
       const app = initializeApp(firebaseConfig);
       const database = getDatabase(app);
       return { app, database };
     } catch (error: any) {
         console.error("Firebase initialization failed:", error);
-        localStorage.removeItem('firebaseConfig');
-        alert(`Firebase initialization failed: ${error.message}. The invalid configuration has been cleared. Please refresh and enter a valid one.`);
+        alert(`Firebase initialization failed: ${error.message}. Please check the hardcoded configuration in App.tsx.`);
         return null;
     }
   }, []); // Run once on mount
@@ -231,21 +135,16 @@ const App: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  if (!firebaseConfig) {
-    return <FirebaseConfigModal />;
-  }
-
   if (!firebaseInstances) {
     return (
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
             <div className="text-xl text-center p-4">
                 <p className="font-semibold mb-4 text-red-400">Firebase Initialization Failed</p>
-                <p>Please refresh the page to enter a new configuration.</p>
+                <p>Please check the hardcoded configuration in App.tsx.</p>
             </div>
         </div>
     );
   }
-
 
   if (isLoading) {
     return (
