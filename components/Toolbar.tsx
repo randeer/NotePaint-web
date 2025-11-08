@@ -80,25 +80,29 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             label="Select"
             isActive={tool === Tool.SELECT}
             onClick={() => setTool(Tool.SELECT)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><path d="M3.8 3.8l16.4 16.4M20.2 3.8L3.8 20.2M12 2v2M12 20v2M2 12h2M20 12h2" stroke="none"/><path d="M14.5 14.5L19 19"/></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.8 3.8l16.4 16.4M20.2 3.8L3.8 20.2M12 2v2M12 20v2M2 12h2M20 12h2" stroke="none"/><path d="M14.5 14.5L19 19"/></svg>}
           />
           <ToolButton
             label="Pencil"
             isActive={tool === Tool.PENCIL}
             onClick={() => setTool(Tool.PENCIL)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>}
           />
            <ToolButton
             label="Eraser"
             isActive={tool === Tool.ERASER}
             onClick={() => setTool(Tool.ERASER)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><path d="M20.49 20.49L3.51 3.51M20.49 3.51L3.51 20.49" stroke="none" /><path d="M2.5 12.5l5-5L12 12l-5 5-4.5-4.5zM12 2.5l5 5L22 12l-5 5-5-5-5-5 5-5z" /></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.49 20.49L3.51 3.51M20.49 3.51L3.51 20.49" stroke="none" /><path d="M2.5 12.5l5-5L12 12l-5 5-4.5-4.5zM12 2.5l5 5L22 12l-5 5-5-5-5-5 5-5z" /></svg>}
           />
           <ToolButton
             label="Text"
             isActive={tool === Tool.TEXT}
             onClick={() => setTool(Tool.TEXT)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><path d="M21 12.79c-1.12 1.3-2.3 2.6-3.5 3.8-1.2 1.2-2.5 2.4-3.7 3.6-1.2 1.2-2.5 2.3-3.8 3.4-1.1.9-2.2 1.8-3.3 2.5.1-.1 0 0 0 0M5 22v-4.81c0-1.03.42-2.03 1.17-2.79l5.42-5.41c.75-.75 1.76-1.17 2.79-1.17 1.03 0 2.04.42 2.79 1.17l5.42 5.41c.75.75 1.17 1.76 1.17 2.79V22M5 12V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5"></path></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79c-1.12 1.3-2.3 2.6-3.5 3.8-1.2 1.2-2.5 2.4-3.7 3.6-1.2 1.2-2.5 2.3-3.8 3.4-1.1.9-2.2 1.8-3.3 2.5.1-.1 0 0 0 0M5 22v-4.81c0-1.03.42-2.03 1.17-2.79l5.42-5.41c.75-.75 1.76-1.17 2.79-1.17 1.03 0 2.04.42 2.79 1.17l5.42 5.41c.75.75 1.17 1.76 1.17 2.79V22M5 12V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5"></path></svg>}
           />
         </div>
       </ToolbarSection>
@@ -108,19 +112,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             label="Line"
             isActive={tool === Tool.LINE}
             onClick={() => setTool(Tool.LINE)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><line x1="5" y1="19" x2="19" y2="5" /></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5" /></svg>}
           />
           <ToolButton
             label="Circle"
             isActive={tool === Tool.CIRCLE}
             onClick={() => setTool(Tool.CIRCLE)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><circle cx="12" cy="12" r="10" /></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /></svg>}
           />
           <ToolButton
             label="Rectangle"
             isActive={tool === Tool.RECTANGLE}
             onClick={() => setTool(Tool.RECTANGLE)}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /></svg>}
+            // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /></svg>}
           />
         </div>
       </ToolbarSection>
@@ -171,7 +178,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           label="Upload Image"
           isActive={false}
           onClick={handleImageButtonClick}
-          icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLineJoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>}
+          // FIX: Corrected SVG property `strokeLineCap` to `strokeLinecap` and `strokeLineJoin` to `strokeLinejoin`.
+          icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>}
         />
         <input
           type="file"

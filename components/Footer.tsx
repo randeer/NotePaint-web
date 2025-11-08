@@ -14,6 +14,13 @@ const GithubIcon = () => (
   );
 
 export const Footer: React.FC = () => {
+  const handleClearConfig = () => {
+    if (window.confirm("Are you sure you want to clear your Firebase configuration? You will need to re-enter it.")) {
+        localStorage.removeItem('firebaseConfig');
+        window.location.reload();
+    }
+  }
+
   return (
     <footer className="bg-slate-950 text-gray-300 p-4">
       <div className="flex justify-between items-center text-xs px-4">
@@ -23,8 +30,11 @@ export const Footer: React.FC = () => {
           <p>Mobile: 0773064421</p>
           <p>Email: <a href="mailto:randeerlalanga92@gmail.com" className="text-blue-400 hover:underline">randeerlalanga92@gmail.com</a></p>
         </div>
-        <div className="text-gray-500">
+        <div className="text-center text-gray-500">
           <p>&copy; 2025 Randeer Lalanga. All rights reserved.</p>
+           <button onClick={handleClearConfig} className="mt-2 text-xs text-gray-600 hover:text-red-400 underline focus:outline-none">
+              Reset Firebase Config
+            </button>
         </div>
         <div className="flex items-center space-x-4">
           <a href="#" target="_blank" rel="noopener noreferrer" title="Portfolio" className="hover:text-white transition-colors">
