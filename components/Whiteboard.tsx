@@ -151,6 +151,8 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
   return null;
 };
 
+const PADDING = 200; // Extra space around the content
+
 export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, tool, color, brushSize }) => {
   const isDrawing = useRef(false);
   const startPoint = useRef({ x: 0, y: 0 });
@@ -163,19 +165,68 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
 
+  // Effect to set initial size and ensure canvas is always at least as big as the viewport
   useEffect(() => {
     const checkSize = () => {
       if (containerRef.current) {
-        setStageSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        });
+        setStageSize(currentSize => ({
+          width: Math.max(currentSize.width, containerRef.current.offsetWidth),
+          height: Math.max(currentSize.height, containerRef.current.offsetHeight),
+        }));
       }
     };
     checkSize();
     window.addEventListener('resize', checkSize);
     return () => window.removeEventListener('resize', checkSize);
   }, []);
+
+  // Effect for content-based expansion of the canvas
+  useEffect(() => {
+    if (!items.length || !containerRef.current) return;
+
+    let maxX = 0;
+    let maxY = 0;
+
+    items.forEach(item => {
+        switch (item.type) {
+            case 'line':
+                item.points.forEach((p, i) => {
+                    if (i % 2 === 0) maxX = Math.max(maxX, item.x + p);
+                    else maxY = Math.max(maxY, item.y + p);
+                });
+                break;
+            case 'simple-line':
+                maxX = Math.max(maxX, item.x + item.points[0], item.x + item.points[2]);
+                maxY = Math.max(maxY, item.y + item.points[1], item.y + item.points[3]);
+                break;
+            case 'rectangle':
+            case 'image':
+            case 'text':
+                maxX = Math.max(maxX, item.x + item.width);
+                maxY = Math.max(maxY, item.y + (item.type === 'text' ? (item.fontSize * 1.5) : item.height));
+                break;
+            case 'circle':
+                maxX = Math.max(maxX, item.x + item.radius);
+                maxY = Math.max(maxY, item.y + item.radius);
+                break;
+        }
+    });
+
+    setStageSize(currentSize => {
+        const requiredWidth = maxX + PADDING;
+        const requiredHeight = maxY + PADDING;
+        
+        const newWidth = Math.max(currentSize.width, containerRef.current?.offsetWidth || 0, requiredWidth);
+        const newHeight = Math.max(currentSize.height, containerRef.current?.offsetHeight || 0, requiredHeight);
+
+        if (newWidth > currentSize.width || newHeight > currentSize.height) {
+            return { width: newWidth, height: newHeight };
+        }
+        return currentSize;
+    });
+
+  }, [items]);
+
 
   useEffect(() => {
     if (!trRef.current || !stageRef.current) return;

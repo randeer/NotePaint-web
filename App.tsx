@@ -54,6 +54,13 @@ const App: React.FC = () => {
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
+  // Effect to reliably reset the undo/redo flag after the state update has rendered.
+  useEffect(() => {
+    if (isUndoingRedoing.current) {
+      isUndoingRedoing.current = false;
+    }
+  }, [items]);
+
 
   // Effect to initialize board from URL hash and connect to Firebase
   useEffect(() => {
@@ -146,9 +153,6 @@ const App: React.FC = () => {
         setRedoStack(prev => [currentItems, ...prev]);
         return previousState;
     });
-    
-    // Allow history to be pushed again after a short delay
-    setTimeout(() => { isUndoingRedoing.current = false; }, 100);
   }, [history]);
 
   const handleRedo = useCallback(() => {
@@ -161,9 +165,6 @@ const App: React.FC = () => {
         setHistory(prev => [...prev, currentItems]);
         return nextState;
     });
-    
-    // Allow history to be pushed again after a short delay
-    setTimeout(() => { isUndoingRedoing.current = false; }, 100);
   }, [redoStack]);
 
 
@@ -196,6 +197,16 @@ const App: React.FC = () => {
     };
     reader.readAsDataURL(file);
   };
+
+  const handleClearPage = useCallback(() => {
+    if (items.length === 0) return; 
+
+    if (window.confirm('Are you sure you want to clear the entire whiteboard? This action can be undone.')) {
+        setHistory(prev => [...prev.slice(-30), items]);
+        setRedoStack([]);
+        setItems([]);
+    }
+  }, [items]);
 
   if (!firebaseInstances) {
     return (
@@ -231,8 +242,9 @@ const App: React.FC = () => {
         onRedo={handleRedo}
         canUndo={history.length > 0}
         canRedo={redoStack.length > 0}
+        onClearPage={handleClearPage}
       />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-auto">
         <Whiteboard
           items={items}
           onStateChange={handleStateChange}
