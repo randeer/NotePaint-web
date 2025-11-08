@@ -4,7 +4,6 @@ import { Whiteboard } from './components/Whiteboard';
 import { ShareModal } from './components/ShareModal';
 import { Footer } from './components/Footer';
 import { Tool, Item } from './types';
-import { encodeState, decodeState } from './utils/stateSerializer';
 
 const App: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -14,37 +13,76 @@ const App: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [boardId, setBoardId] = useState<string | null>(null);
 
+  // Effect to initialize board from URL hash and localStorage
   useEffect(() => {
+    const getBoardIdFromHash = () => window.location.hash.slice(1);
+
+    let currentBoardId = getBoardIdFromHash();
+    if (!currentBoardId) {
+      currentBoardId = `board-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      window.location.hash = currentBoardId;
+    }
+    setBoardId(currentBoardId);
+
     try {
-      const hash = window.location.hash.slice(1);
-      if (hash) {
-        const decodedState = decodeState(hash);
-        if (Array.isArray(decodedState)) {
-          setItems(decodedState);
-        }
+      const savedState = localStorage.getItem(currentBoardId);
+      if (savedState) {
+        setItems(JSON.parse(savedState));
       }
     } catch (error) {
-      console.error("Failed to decode state from URL hash:", error);
-      // Optionally clear the hash or notify the user
-      window.location.hash = '';
+      console.error("Failed to load state from localStorage:", error);
+      localStorage.removeItem(currentBoardId);
     } finally {
       setIsLoading(false);
     }
+
+    const handleHashChange = () => {
+      // Simplest way to handle board switching via back/forward buttons
+      window.location.reload();
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleShare = useCallback(() => {
-    try {
-      const encodedState = encodeState(items);
-      const url = `${window.location.origin}${window.location.pathname}#${encodedState}`;
-      setShareUrl(url);
-      setIsShareModalOpen(true);
-      window.location.hash = encodedState;
-    } catch (error) {
-      console.error("Failed to encode state for sharing:", error);
-      alert("Could not generate shareable link.");
+  // Effect to listen for changes from other tabs
+  useEffect(() => {
+    if (!boardId) return;
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === boardId && event.newValue) {
+        try {
+          const newItems = JSON.parse(event.newValue);
+          setItems(newItems);
+        } catch (error) {
+          console.error("Failed to parse state from storage event:", error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [boardId]);
+  
+  // Effect to save state to localStorage when items change
+  useEffect(() => {
+    // We prevent saving during the initial load or if boardId is not set yet
+    if (boardId && !isLoading) {
+      try {
+        localStorage.setItem(boardId, JSON.stringify(items));
+      } catch (error) {
+        console.error("Failed to save state to localStorage:", error);
+      }
     }
-  }, [items]);
+  }, [items, boardId, isLoading]);
+
+  const handleShare = useCallback(() => {
+    const url = window.location.href;
+    setShareUrl(url);
+    setIsShareModalOpen(true);
+  }, []);
   
   const handleImageUpload = (file: File) => {
     const reader = new FileReader();
