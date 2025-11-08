@@ -49,6 +49,10 @@ const App: React.FC = () => {
   
   // Ref to prevent history pushes during undo/redo actions
   const isUndoingRedoing = useRef(false);
+  
+  // Ref to hold the latest items state for comparison in Firebase listener
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
 
   // Effect to initialize board from URL hash and connect to Firebase
@@ -69,8 +73,8 @@ const App: React.FC = () => {
     const unsubscribe = onValue(boardRef, (snapshot) => {
       const data = snapshot.val();
       const newItems = data?.items || [];
-      // Only update state if it's different, to avoid loops with undo/redo
-      if (JSON.stringify(newItems) !== JSON.stringify(items)) {
+      // Use the ref to get the current items for comparison, preventing stale closures
+      if (JSON.stringify(newItems) !== JSON.stringify(itemsRef.current)) {
          setItems(newItems);
       }
       setIsLoading(false);
@@ -119,17 +123,18 @@ const App: React.FC = () => {
   const handleStateChange = useCallback((updater: React.SetStateAction<Item[]>, isComplete: boolean) => {
     if (isUndoingRedoing.current) return;
 
-    const currentItems = items;
-    const newItems = typeof updater === 'function' ? updater(currentItems) : updater;
+    setItems(currentItems => {
+      const newItems = typeof updater === 'function' ? updater(currentItems) : updater;
 
-    if (isComplete) {
-      if (JSON.stringify(currentItems) !== JSON.stringify(newItems)) {
-        setHistory(prev => [...prev.slice(-30), currentItems]); // Limit history size
-        setRedoStack([]);
+      if (isComplete) {
+        if (JSON.stringify(currentItems) !== JSON.stringify(newItems)) {
+          setHistory(prev => [...prev.slice(-30), currentItems]); // Limit history size
+          setRedoStack([]);
+        }
       }
-    }
-    setItems(newItems);
-  }, [items]);
+      return newItems;
+    });
+  }, []);
   
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -137,12 +142,14 @@ const App: React.FC = () => {
     isUndoingRedoing.current = true;
     const previousState = history[history.length - 1];
     setHistory(history.slice(0, history.length - 1));
-    setRedoStack(prev => [items, ...prev]);
-    setItems(previousState);
+    setItems(currentItems => {
+        setRedoStack(prev => [currentItems, ...prev]);
+        return previousState;
+    });
     
     // Allow history to be pushed again after a short delay
     setTimeout(() => { isUndoingRedoing.current = false; }, 100);
-  }, [history, items]);
+  }, [history]);
 
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0) return;
@@ -150,12 +157,14 @@ const App: React.FC = () => {
     isUndoingRedoing.current = true;
     const nextState = redoStack[0];
     setRedoStack(redoStack.slice(1));
-    setHistory(prev => [...prev, items]);
-    setItems(nextState);
+    setItems(currentItems => {
+        setHistory(prev => [...prev, currentItems]);
+        return nextState;
+    });
     
     // Allow history to be pushed again after a short delay
     setTimeout(() => { isUndoingRedoing.current = false; }, 100);
-  }, [redoStack, items]);
+  }, [redoStack]);
 
 
   const handleShare = useCallback(() => {
