@@ -10,6 +10,10 @@ interface ToolbarProps {
   setBrushSize: (size: number) => void;
   onShare: () => void;
   onImageUpload: (file: File) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const ToolButton = ({
@@ -17,20 +21,23 @@ const ToolButton = ({
   icon,
   isActive,
   onClick,
+  disabled = false,
 }: {
   label: string;
   icon: React.ReactNode;
   isActive: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }) => (
   <button
     title={label}
     onClick={onClick}
+    disabled={disabled}
     className={`w-10 h-10 flex items-center justify-center rounded transition-colors duration-200 ${
       isActive
         ? 'bg-blue-500 text-white shadow-inner'
         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-    }`}
+    } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
   >
     {icon}
   </button>
@@ -59,6 +66,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   setBrushSize,
   onShare,
   onImageUpload,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +85,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <aside className="bg-gray-100 text-black p-2 flex items-center space-x-2 shadow-md z-10 w-full">
+       <ToolbarSection title="History">
+        <div className="flex space-x-1">
+          <ToolButton
+            label="Undo"
+            isActive={false}
+            onClick={onUndo}
+            disabled={!canUndo}
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 7-5-5-5 5"/><path d="M16 2v11"/></svg>}
+          />
+          <ToolButton
+            label="Redo"
+            isActive={false}
+            onClick={onRedo}
+            disabled={!canRedo}
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 13v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-6"/><path d="m3 7 5-5 5 5"/><path d="M8 2v11"/></svg>}
+          />
+        </div>
+      </ToolbarSection>
       <ToolbarSection title="Tools">
         <div className="grid grid-cols-2 gap-1">
           <ToolButton

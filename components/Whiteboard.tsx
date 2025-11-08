@@ -5,7 +5,7 @@ import { Item, Tool, TextItem, ImageItem, RectangleItem, CircleItem, SimpleLineI
 
 interface WhiteboardProps {
   items: Item[];
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  onStateChange: (updater: React.SetStateAction<Item[]>, isComplete: boolean) => void;
   tool: Tool;
   color: string;
   brushSize: number;
@@ -151,7 +151,7 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
   return null;
 };
 
-export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, color, brushSize }) => {
+export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, tool, color, brushSize }) => {
   const isDrawing = useRef(false);
   const startPoint = useRef({ x: 0, y: 0 });
   const [drawingShape, setDrawingShape] = useState<Item | null>(null);
@@ -227,7 +227,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
             x: 0,
             y: 0,
         };
-        setItems((prevItems) => [...prevItems, newItem]);
+        onStateChange((prevItems) => [...prevItems, newItem], false);
     } else {
         const shapeId = `drawing-${Date.now()}`;
         let shape: Item | null = null;
@@ -251,7 +251,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
     if (!point) return;
 
     if (tool === Tool.PENCIL || tool === Tool.ERASER) {
-        setItems((prevItems) => {
+        onStateChange((prevItems) => {
           const lastItem = prevItems[prevItems.length - 1];
           if (lastItem && lastItem.type === 'line') {
             return [
@@ -260,7 +260,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
             ];
           }
           return prevItems;
-        });
+        }, false);
     } else if (drawingShape) {
         let updatedShape = { ...drawingShape };
         if (updatedShape.type === 'rectangle') {
@@ -280,6 +280,11 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
   };
 
   const handleMouseUp = () => {
+    if (tool === Tool.PENCIL || tool === Tool.ERASER) {
+        if(isDrawing.current) {
+            onStateChange(items => items, true); // Signal completion
+        }
+    }
     isDrawing.current = false;
     if (drawingShape) {
       if (
@@ -298,7 +303,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
               drawingShape.height = -drawingShape.height;
             }
           }
-         setItems(prev => [...prev, { ...drawingShape, id: Date.now().toString() }]);
+         onStateChange(prev => [...prev, { ...drawingShape, id: Date.now().toString() }], true);
       }
       setDrawingShape(null);
     }
@@ -322,19 +327,19 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
       fontSize: 24,
       width: 200,
     };
-    setItems((prevItems) => [...prevItems, newItem]);
+    onStateChange((prevItems) => [...prevItems, newItem], true);
   };
   
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const id = e.target.id();
     const target = e.target;
-    setItems(
+    onStateChange(
       items.map((item) => {
         if (item.id === id) {
           return { ...item, x: target.x(), y: target.y() };
         }
         return item;
-      })
+      }), true
     );
   };
 
@@ -363,7 +368,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
         }
         return item;
       });
-      setItems(newItems);
+      onStateChange(newItems, true);
       setEditingText(null);
     }
   };
@@ -378,7 +383,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
     const node = e.target;
     const id = node.id();
 
-    setItems(prevItems => prevItems.map(item => {
+    onStateChange(prevItems => prevItems.map(item => {
         if (item.id === id) {
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
@@ -416,7 +421,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, setItems, tool, c
             }
         }
         return item;
-    }));
+    }), true);
   };
 
 

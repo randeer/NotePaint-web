@@ -35,6 +35,9 @@ const App: React.FC = () => {
   }, []); // Run once on mount
 
   const [items, setItems] = useState<Item[]>([]);
+  const [history, setHistory] = useState<Item[][]>([]);
+  const [redoStack, setRedoStack] = useState<Item[][]>([]);
+  
   const [tool, setTool] = useState<Tool>(Tool.SELECT);
   const [color, setColor] = useState<string>('#000000');
   const [brushSize, setBrushSize] = useState<number>(5);
@@ -43,6 +46,10 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [boardId, setBoardId] = useState<string | null>(null);
   const updateTimeoutRef = useRef<number | null>(null);
+  
+  // Ref to prevent history pushes during undo/redo actions
+  const isUndoingRedoing = useRef(false);
+
 
   // Effect to initialize board from URL hash and connect to Firebase
   useEffect(() => {
@@ -61,7 +68,11 @@ const App: React.FC = () => {
 
     const unsubscribe = onValue(boardRef, (snapshot) => {
       const data = snapshot.val();
-      setItems(data?.items || []);
+      const newItems = data?.items || [];
+      // Only update state if it's different, to avoid loops with undo/redo
+      if (JSON.stringify(newItems) !== JSON.stringify(items)) {
+         setItems(newItems);
+      }
       setIsLoading(false);
     }, (error) => {
         console.error("Firebase read failed:", error);
@@ -78,7 +89,7 @@ const App: React.FC = () => {
         unsubscribe();
         window.removeEventListener('hashchange', handleHashChange);
     }
-  }, [firebaseInstances]);
+  }, [firebaseInstances]); // Depends only on firebaseInstances
 
   
   // Effect to save state to Firebase with debounce
@@ -104,6 +115,48 @@ const App: React.FC = () => {
       }
     };
   }, [items, boardId, isLoading, firebaseInstances]);
+  
+  const handleStateChange = useCallback((updater: React.SetStateAction<Item[]>, isComplete: boolean) => {
+    if (isUndoingRedoing.current) return;
+
+    const currentItems = items;
+    const newItems = typeof updater === 'function' ? updater(currentItems) : updater;
+
+    if (isComplete) {
+      if (JSON.stringify(currentItems) !== JSON.stringify(newItems)) {
+        setHistory(prev => [...prev.slice(-30), currentItems]); // Limit history size
+        setRedoStack([]);
+      }
+    }
+    setItems(newItems);
+  }, [items]);
+  
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    
+    isUndoingRedoing.current = true;
+    const previousState = history[history.length - 1];
+    setHistory(history.slice(0, history.length - 1));
+    setRedoStack(prev => [items, ...prev]);
+    setItems(previousState);
+    
+    // Allow history to be pushed again after a short delay
+    setTimeout(() => { isUndoingRedoing.current = false; }, 100);
+  }, [history, items]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+
+    isUndoingRedoing.current = true;
+    const nextState = redoStack[0];
+    setRedoStack(redoStack.slice(1));
+    setHistory(prev => [...prev, items]);
+    setItems(nextState);
+    
+    // Allow history to be pushed again after a short delay
+    setTimeout(() => { isUndoingRedoing.current = false; }, 100);
+  }, [redoStack, items]);
+
 
   const handleShare = useCallback(() => {
     const url = window.location.href;
@@ -128,7 +181,7 @@ const App: React.FC = () => {
             height: image.height,
             src: src,
           };
-          setItems(prevItems => [...prevItems, newItem]);
+          handleStateChange(prevItems => [...prevItems, newItem], true);
         };
       }
     };
@@ -165,11 +218,15 @@ const App: React.FC = () => {
         setBrushSize={setBrushSize}
         onShare={handleShare}
         onImageUpload={handleImageUpload}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={history.length > 0}
+        canRedo={redoStack.length > 0}
       />
       <main className="flex-1 overflow-hidden">
         <Whiteboard
           items={items}
-          setItems={setItems}
+          onStateChange={handleStateChange}
           tool={tool}
           color={color}
           brushSize={brushSize}
