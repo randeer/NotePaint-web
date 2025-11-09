@@ -26,9 +26,9 @@ const useImage = (src: string): [HTMLImageElement | undefined] => {
 const ImageCanvasItem: React.FC<{
   item: ImageItem;
   onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => void;
-  onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  onPointerDown: (e: Konva.KonvaEventObject<PointerEvent>) => void;
   draggable: boolean;
-}> = ({ item, onDragEnd, onMouseDown, draggable }) => {
+}> = ({ item, onDragEnd, onPointerDown, draggable }) => {
   const [image] = useImage(item.src);
   return (
     <KonvaImage
@@ -40,7 +40,7 @@ const ImageCanvasItem: React.FC<{
       height={item.height}
       draggable={draggable}
       onDragEnd={onDragEnd}
-      onMouseDown={onMouseDown}
+      onPointerDown={onPointerDown}
     />
   );
 };
@@ -49,7 +49,7 @@ interface CanvasItemProps {
   item: Item;
   onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => void;
   onDoubleClick: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-  onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  onPointerDown: (e: Konva.KonvaEventObject<PointerEvent>) => void;
   tool: Tool;
 }
 
@@ -57,7 +57,7 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
   item,
   onDragEnd,
   onDoubleClick,
-  onMouseDown,
+  onPointerDown,
   tool
 }) => {
   const isDraggable = tool === Tool.SELECT;
@@ -75,7 +75,7 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
         globalCompositeOperation={item.isEraser ? 'destination-out' : 'source-over'}
         draggable={isDraggable}
         onDragEnd={onDragEnd}
-        onMouseDown={onMouseDown}
+        onPointerDown={onPointerDown}
         x={item.x}
         y={item.y}
       />
@@ -94,13 +94,13 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
         onDragEnd={onDragEnd}
         onDblClick={onDoubleClick}
         onDblTap={onDoubleClick}
-        onMouseDown={onMouseDown}
+        onPointerDown={onPointerDown}
         width={item.width}
       />
     );
   }
   if (item.type === 'image') {
-    return <ImageCanvasItem item={item} onDragEnd={onDragEnd} onMouseDown={onMouseDown} draggable={isDraggable} />;
+    return <ImageCanvasItem item={item} onDragEnd={onDragEnd} onPointerDown={onPointerDown} draggable={isDraggable} />;
   }
   if (item.type === 'rectangle') {
     return (
@@ -114,7 +114,7 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
             strokeWidth={item.strokeWidth}
             draggable={isDraggable}
             onDragEnd={onDragEnd}
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
         />
     )
   }
@@ -129,7 +129,7 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
             strokeWidth={item.strokeWidth}
             draggable={isDraggable}
             onDragEnd={onDragEnd}
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
         />
     )
   }
@@ -142,7 +142,7 @@ const CanvasItem: React.FC<CanvasItemProps> = ({
             strokeWidth={item.strokeWidth}
             draggable={isDraggable}
             onDragEnd={onDragEnd}
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
             x={item.x}
             y={item.y}
         />
@@ -251,7 +251,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
   }, [selectedId, items]);
 
 
-  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
     // Deselect if clicked on empty area
     if (e.target === e.target.getStage()) {
       setSelectedId(null);
@@ -293,7 +293,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
     }
   };
 
-  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handlePointerMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
     if (!isDrawing.current) return;
     
     const stage = e.target.getStage();
@@ -330,7 +330,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
     }
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = () => {
     if (tool === Tool.PENCIL || tool === Tool.ERASER) {
         if(isDrawing.current) {
             onStateChange(items => items, true); // Signal completion
@@ -424,7 +424,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
     }
   };
   
-  const handleItemMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleItemPointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
       if (tool === Tool.SELECT) {
           setSelectedId(e.target.id());
       }
@@ -481,9 +481,9 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
       <Stage
         width={stageSize.width}
         height={stageSize.height}
-        onMouseDown={handleMouseDown}
-        onMousemove={handleMouseMove}
-        onMouseup={handleMouseUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
         onClick={handleStageClick}
         ref={stageRef}
         className="bg-white"
@@ -496,11 +496,11 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ items, onStateChange, to
               item={item} 
               onDragEnd={handleDragEnd} 
               onDoubleClick={handleTextDblClick}
-              onMouseDown={handleItemMouseDown}
+              onPointerDown={handleItemPointerDown}
               tool={tool}
             />;
           })}
-          {drawingShape && <CanvasItem item={drawingShape} onDragEnd={()=>{}} onDoubleClick={()=>{}} onMouseDown={()=>{}} tool={tool}/>}
+          {drawingShape && <CanvasItem item={drawingShape} onDragEnd={()=>{}} onDoubleClick={()=>{}} onPointerDown={()=>{}} tool={tool}/>}
           <Transformer
             ref={trRef}
             boundBoxFunc={(oldBox, newBox) => {
