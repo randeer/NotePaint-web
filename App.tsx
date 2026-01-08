@@ -11,14 +11,14 @@ import { getDatabase, ref, onValue, set } from "firebase/database";
 
 // --- Hardcoded Firebase Configuration ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCo-dliYA6nyWNRD6w8k1fV8qAiAbebdJ4",
-  authDomain: "testlala-8e34d.firebaseapp.com",
-  databaseURL: "https://testlala-8e34d-default-rtdb.firebaseio.com",
-  projectId: "testlala-8e34d",
-  storageBucket: "testlala-8e34d.appspot.com",
-  messagingSenderId: "1003271711310",
-  appId: "1:1003271711310:web:4c5e188cd9ef166a2c711f",
-  measurementId: "G-R6Z9Q70TQP"
+  apiKey: "AIzaSyACtfgK9cexqXbupTTgZ4kyv8E86o2eK7g",
+  authDomain: "github-27076.firebaseapp.com",
+  databaseURL: "https://github-27076-default-rtdb.firebaseio.com",
+  projectId: "github-27076",
+  storageBucket: "github-27076.firebasestorage.app",
+  messagingSenderId: "531060917109",
+  appId: "1:531060917109:web:15d675ac47b8e68dc4893c",
+  measurementId: "G-RVL8YYG4PF"
 };
 
 const App: React.FC = () => {
